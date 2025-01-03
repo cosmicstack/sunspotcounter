@@ -35,6 +35,19 @@ class SunSpotDataset(Dataset):
         img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
         image = read_image(img_path)
         label = self.img_labels.iloc[idx, 1]
+
+        if image.shape[0] not in [1, 3]:
+            print(f"Warning: Image {img_path} has {image.shape[0]} channels")
+        
+        # Convert RGB to grayscale if image has 3 channels
+        if image.shape[0] == 3:
+            # Use standard RGB to grayscale conversion weights
+            # These weights account for human perception of different colors
+            weights = torch.tensor([0.2989, 0.5870, 0.1140])
+            image = (image.float() * weights.view(-1, 1, 1)).sum(dim=0, keepdim=True)
+        elif image.shape[0] != 1:
+            raise ValueError(f"Unexpected number of channels: {image.shape[0]} for image {img_path}")
+
         if self.transform:
             image = self.transform(image)
         return image, label
@@ -46,6 +59,8 @@ def load_data(
         num_workers: int,
         batch_size: int,
 ) -> DataLoader:
+    df = pd.read_csv(annotations_file)
+
     # Create datasets with different transforms
     train_dataset = SunSpotDataset(annotations_file, img_dir, aug=True)
     val_dataset = SunSpotDataset(annotations_file, img_dir, aug=False)
@@ -55,18 +70,24 @@ def load_data(
     total_size = len(train_dataset)
     train_size = int(0.7 * total_size)
     val_size = int(0.15 * total_size)
-    test_size = total_size - train_size - val_size
     
-    # Create indices for splitting
-    indices = torch.randperm(total_size)
-    train_indices = indices[:train_size]
-    val_indices = indices[train_size:train_size+val_size]
-    test_indices = indices[train_size+val_size:]
+    # Shuffle the DataFrame
+    df_shuffled = df.sample(frac=1, random_state=42).reset_index(drop=True)
     
-    # Split datasets using indices
-    train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
-    val_dataset = torch.utils.data.Subset(val_dataset, val_indices)
-    test_dataset = torch.utils.data.Subset(test_dataset, test_indices)
+    # Split the DataFrame
+    train_df = df_shuffled.iloc[:train_size]
+    val_df = df_shuffled.iloc[train_size:train_size+val_size]
+    test_df = df_shuffled.iloc[train_size+val_size:]
+    
+    # Save split DataFrames to temporary files
+    train_df.to_csv('train_labels.csv', index=False)
+    val_df.to_csv('val_labels.csv', index=False)
+    test_df.to_csv('test_labels.csv', index=False)
+    
+    # Create datasets with different transforms and their respective labels
+    train_dataset = SunSpotDataset('train_labels.csv', img_dir, aug=True)
+    val_dataset = SunSpotDataset('val_labels.csv', img_dir, aug=False)
+    test_dataset = SunSpotDataset('test_labels.csv', img_dir, aug=False)
     
     return (
         DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers),
@@ -89,7 +110,7 @@ if __name__ == "__main__":
     for images, labels in train_loader:
         print(f"Image batch shape: {images.shape}")
         print(f"Label batch shape: {labels.shape}")
-        # plt.imshow(images[0].permute(1, 2, 0))
-        # plt.title(f"Sunspot count: {labels[0]}")
-        # plt.show()
+        plt.imshow(images[0].permute(1, 2, 0), cmap='gray')
+        plt.title(f"Sunspot count: {labels[0]}")
+        plt.show()
         break
