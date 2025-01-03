@@ -80,14 +80,14 @@ def load_data(
     test_df = df_shuffled.iloc[train_size+val_size:]
     
     # Save split DataFrames to temporary files
-    train_df.to_csv('train_labels.csv', index=False)
-    val_df.to_csv('val_labels.csv', index=False)
-    test_df.to_csv('test_labels.csv', index=False)
+    train_df.to_csv('data/train_labels.csv', index=False)
+    val_df.to_csv('data/val_labels.csv', index=False)
+    test_df.to_csv('data/test_labels.csv', index=False)
     
     # Create datasets with different transforms and their respective labels
-    train_dataset = SunSpotDataset('train_labels.csv', img_dir, aug=True)
-    val_dataset = SunSpotDataset('val_labels.csv', img_dir, aug=False)
-    test_dataset = SunSpotDataset('test_labels.csv', img_dir, aug=False)
+    train_dataset = SunSpotDataset('data/train_labels.csv', img_dir, aug=True)
+    val_dataset = SunSpotDataset('data/val_labels.csv', img_dir, aug=False)
+    test_dataset = SunSpotDataset('data/test_labels.csv', img_dir, aug=False)
     
     return (
         DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers),
