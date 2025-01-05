@@ -6,8 +6,8 @@ import numpy as np
 import torch
 import torch.utils.tensorboard as tb
 
-from .model import load_model, save_model
-from .data.dataLoader import load_data
+from model import load_model, save_model
+from data.dataLoader import load_data
 
 def train(
         exp_dir: str = "logs",
@@ -18,10 +18,8 @@ def train(
         seed: int = 2025,
         **kwargs,
 ):
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
-        device = torch.device("mps") # for Arm Macs
+    if torch.backends.mps.is_available():
+        device = torch.device("mps")
     else:
         print("CUDA not available, using CPU")
         device = torch.device("cpu")

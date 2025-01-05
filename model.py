@@ -79,7 +79,7 @@ def save_model(model: torch.nn.Module):
     torch.save(model.state_dict(), model_path)
     return model_path
 
-def load_model(model_name="sunspot_model") -> torch.nn.Module:
+def load_model(model_name: str = "sunspot_model", with_weights: bool = False) -> torch.nn.Module:
     """
     Load the model from the given path.
 
@@ -89,9 +89,11 @@ def load_model(model_name="sunspot_model") -> torch.nn.Module:
     Returns:
         SunspotCounter: Model object
     """
-    model = f"{model_name}.th"
-    model_path = CURRENT_DIR / model
-    model.load_state_dict(torch.load(model_path))
+    model = SunspotCounter()
+    if with_weights:
+        model_name = f"{model_name}.th"
+        model_path = CURRENT_DIR / model_name
+        model.load_state_dict(torch.load(model_path))
     return model
 
 def debug_model():
@@ -102,7 +104,9 @@ def debug_model():
         None
     """
     model = SunspotCounter()
+    model = model.to(torch.device("mps"))
     x = torch.randn(4, 1, 512, 512) # (b, c, h, w)
+    x = x.to(torch.device("mps"))
     print(f"Input shape: {x.shape}")
     y = model(x)
     print(f"Output shape: {y.shape}")

@@ -13,7 +13,7 @@ def test(seed: int = 2025):
         print("CUDA not available, using CPU")
         device = torch.device("cpu")
 
-    model = load_model()
+    model = load_model(with_weights=True)
     model = model.to(device)
 
     torch.manual_seed(seed)
