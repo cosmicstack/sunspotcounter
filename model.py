@@ -75,7 +75,7 @@ def save_model(model: torch.nn.Module):
         model (torch.nn.Module): Model object
         model_path (Path): Path to save the model
     """
-    model_path = CURRENT_DIR / 'sunspot_model.pth'
+    model_path = CURRENT_DIR / 'sunspot_model.th'
     torch.save(model.state_dict(), model_path)
     return model_path
 
@@ -89,7 +89,7 @@ def load_model(model_name="sunspot_model") -> torch.nn.Module:
     Returns:
         SunspotCounter: Model object
     """
-    model = f"{model_name}.pth"
+    model = f"{model_name}.th"
     model_path = CURRENT_DIR / model
     model.load_state_dict(torch.load(model_path))
     return model
