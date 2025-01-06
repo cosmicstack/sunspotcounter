@@ -21,13 +21,16 @@ def test(seed: int = 2025):
 
     test_data = load_data("data/img/labels.txt", "data/img/", num_workers=2, batch_size=32)[2]
 
+    loss_func = torch.nn.MSELoss()
+
     test_batch_loss = []
 
     model.eval()
     for images, labels in test_data:
         images, labels = images.to(device), labels.to(device)
         output = model(images)
-        test_batch_loss.append(np.mean((output - labels) ** 2))
+        loss = loss_func(output.squeeze(1), labels)
+        test_batch_loss.append(loss.item())
     
     test_loss = np.mean(test_batch_loss)
     print(f"Test Loss: {test_loss}")

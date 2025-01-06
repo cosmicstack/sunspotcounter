@@ -34,7 +34,7 @@ class SunSpotDataset(Dataset):
     def __getitem__(self, idx):
         img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
         image = read_image(img_path)
-        label = self.img_labels.iloc[idx, 1]
+        label = torch.tensor(self.img_labels.iloc[idx, 1], dtype=torch.float32)
 
         if image.shape[0] not in [1, 3]:
             print(f"Warning: Image {img_path} has {image.shape[0]} channels")

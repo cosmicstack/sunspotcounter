@@ -61,7 +61,7 @@ def train(
             outputs = model(images)
             
             # Compute loss
-            loss = loss_func(outputs, labels)
+            loss = loss_func(outputs.squeeze(1), labels)
             logger.add_scalar("train/batch loss", loss.item(), epoch * len(train_data) + global_step)
             metrics["train_loss"].append(loss.item())
 
@@ -78,7 +78,7 @@ def train(
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
             
-            loss = loss_func(outputs, labels)
+            loss = loss_func(outputs.squeeze(1), labels)
 
             metrics["val_loss"].append(loss.item())
         
@@ -94,7 +94,7 @@ def train(
         if epoch == 0 or epoch == num_epoch - 1 or epoch % 10 == 0:
             print(
                 f"Epoch {epoch + 1:2d} / {num_epoch:2d}: "
-                f"train loss={epoch_train_acc:.4f} "
+                f"train loss={epoch_train_acc:.4f}; "
                 f"val loss={epoch_val_acc:.4f}"
             )
         
