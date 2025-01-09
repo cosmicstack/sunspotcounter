@@ -32,7 +32,7 @@ def train(
     log_dir = Path(exp_dir) / f"{model_name}_{datetime.now().strftime('%m%d_%H%M%S')}"
     logger = tb.SummaryWriter(log_dir)
 
-    model = load_model()
+    model = load_model(**kwargs)
     logger.add_graph(model, torch.zeros(1, 1, 512, 512))
     model = model.to(device)
 

@@ -8,23 +8,25 @@ INPUT_STD = 0.5
 CURRENT_DIR = Path(__file__).resolve().parent
 
 class SunspotCounter(nn.Module):
-    def __init__(self):
+    def __init__(self, channel_list=[16, 32]):
         """
         A simple CNN model for counting sunspots in images.
         The model consists of 3 convolutional layers followed by a fully connected layer.
 
         Args:
-            None
+            channel_list (list): List of number of channels in each convolutional layer. Default: [16, 32, 64].
+            Always starts with 1 channel as input (1*512*512). Make sure to pass powers of 2.
         """
         super().__init__()
         self.register_buffer('mean', torch.tensor([INPUT_MEAN]))
         self.register_buffer('std', torch.tensor([INPUT_STD]))
+        self.channel_list = channel_list
 
         class ConvBlock(nn.Module):
             def __init__(self, in_channels, out_channels, stride=2, dilation=2):
                 super().__init__()
                 self.conv = nn.Sequential(
-                    nn.Conv2d(in_channels, out_channels, 3, stride=stride, padding=dilation, dilation=dilation),
+                    nn.Conv2d(in_channels, out_channels, 3, stride=stride, padding=1, dilation=dilation),
                     nn.BatchNorm2d(out_channels),
                     nn.ReLU(),
                     nn.Conv2d(out_channels, out_channels, 3, stride=1, padding=1),
@@ -36,19 +38,24 @@ class SunspotCounter(nn.Module):
             def forward(self, x):
                 return self.conv(x)
         
-        conv_channels = [16, 32, 64]
         conv_layers = []
         in_channels = 1
-        for i in conv_channels:
-            conv_layers.append(ConvBlock(in_channels, i))
+        for i in self.channel_list:
+            if in_channels != 1:
+                conv_layers.append(ConvBlock(in_channels, i, dilation=1))
+            else:
+                conv_layers.append(ConvBlock(in_channels, i))
             in_channels = i
         
         self.conv = nn.Sequential(*conv_layers)
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.avgpool = nn.AdaptiveAvgPool2d((4))
         self.fc = nn.Sequential(
             nn.Flatten(),
-            nn.Dropout(0.2),
-            nn.Linear(64, 32),
+            nn.Dropout(),
+            nn.Linear(self.channel_list[-1]*4*4, 128),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(128, 32),
             nn.ReLU(),
             nn.Linear(32, 1)
         )
@@ -79,7 +86,7 @@ def save_model(model: torch.nn.Module):
     torch.save(model.state_dict(), model_path)
     return model_path
 
-def load_model(model_name: str = "sunspot_model", with_weights: bool = False) -> torch.nn.Module:
+def load_model(model_name: str = "sunspot_model", with_weights: bool = False, **kwargs) -> torch.nn.Module:
     """
     Load the model from the given path.
 
@@ -89,7 +96,7 @@ def load_model(model_name: str = "sunspot_model", with_weights: bool = False) ->
     Returns:
         SunspotCounter: Model object
     """
-    model = SunspotCounter()
+    model = SunspotCounter(**kwargs)
     if with_weights:
         model_name = f"{model_name}.th"
         model_path = CURRENT_DIR / model_name
@@ -105,8 +112,12 @@ def debug_model():
     """
     model = SunspotCounter()
     model = model.to(torch.device("mps"))
+    print("==================================================")
+    print(model)
+    print("==================================================")
     x = torch.randn(4, 1, 512, 512) # (b, c, h, w)
     x = x.to(torch.device("mps"))
+    print("==================================================")
     print(f"Input shape: {x.shape}")
     y = model(x)
     print(f"Output shape: {y.shape}")
