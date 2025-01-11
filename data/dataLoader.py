@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, DataLoader, random_split
 import matplotlib.pyplot as plt
 
 class SunSpotDataset(Dataset):
-    def __init__(self, annotations_file, img_dir, aug=False):
+    def __init__(self, annotations_file, img_dir, aug="none"):
         self.img_labels = pd.read_csv(annotations_file)
         self.img_dir = img_dir
         self.aug = aug
@@ -17,14 +17,21 @@ class SunSpotDataset(Dataset):
         return len(self.img_labels)
     
     def get_transform(self, aug):
-        if aug:
+        if self.aug=="custom":
             return v2.Compose([
                 v2.RandomHorizontalFlip(p=0.5),
                 v2.RandomVerticalFlip(p=0.5),
                 v2.ToDtype(torch.float32, scale=True),
                 v2.Normalize(mean=[0.5], std=[0.5])
             ])
-        else:
+        elif self.aug=="pretrained":
+            return v2.Compose([
+                v2.Grayscale(num_output_channels=3),
+                v2.Resize((224, 224)),
+                v2.ToDtype(torch.float32, scale=True),
+                v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ])
+        elif self.aug=="none":
             return v2.Compose([
                 v2.ToDtype(torch.float32, scale=True),
                 v2.Normalize(mean=[0.5], std=[0.5])
@@ -50,6 +57,7 @@ class SunSpotDataset(Dataset):
 
         if self.transform:
             image = self.transform(image)
+        
         return image, label
 
 
@@ -58,13 +66,23 @@ def load_data(
         img_dir: str,
         num_workers: int,
         batch_size: int,
+        aug: str
 ) -> DataLoader:
     df = pd.read_csv(annotations_file)
 
+    if aug=="custom":
     # Create datasets with different transforms
-    train_dataset = SunSpotDataset(annotations_file, img_dir, aug=True)
-    val_dataset = SunSpotDataset(annotations_file, img_dir, aug=False)
-    test_dataset = SunSpotDataset(annotations_file, img_dir, aug=False)
+        train_dataset = SunSpotDataset(annotations_file, img_dir, aug="custom")
+        val_dataset = SunSpotDataset(annotations_file, img_dir, aug="none")
+        test_dataset = SunSpotDataset(annotations_file, img_dir, aug="none")
+    elif aug=="pretrained":
+        train_dataset = SunSpotDataset(annotations_file, img_dir, aug="pretrained")
+        val_dataset = SunSpotDataset(annotations_file, img_dir, aug="pretrained")
+        test_dataset = SunSpotDataset(annotations_file, img_dir, aug="pretrained")
+    elif aug=="none":
+        train_dataset = SunSpotDataset(annotations_file, img_dir, aug="none")
+        val_dataset = SunSpotDataset(annotations_file, img_dir, aug="none")
+        test_dataset = SunSpotDataset(annotations_file, img_dir, aug="none")
     
     # Calculate splits
     total_size = len(train_dataset)
@@ -99,9 +117,9 @@ if __name__ == "__main__":
     annotations_file = "data/img/labels.txt"
     img_dir = "data/img/"
     num_workers = 2
-    batch_size = 32
+    batch_size = 16
 
-    train_loader, val_loader, test_loader = load_data(annotations_file, img_dir, num_workers, batch_size)
+    train_loader, val_loader, test_loader = load_data(annotations_file, img_dir, num_workers, batch_size, aug="pretrained")
     print(f"Number of training batches: {len(train_loader)}")
     print(f"Number of validation batches: {len(val_loader)}")
     print(f"Number of test batches: {len(test_loader)}")
