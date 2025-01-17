@@ -103,9 +103,18 @@ def load_data(
     test_df.to_csv('data/test_labels.csv', index=False)
     
     # Create datasets with different transforms and their respective labels
-    train_dataset = SunSpotDataset('data/train_labels.csv', img_dir, aug=True)
-    val_dataset = SunSpotDataset('data/val_labels.csv', img_dir, aug=False)
-    test_dataset = SunSpotDataset('data/test_labels.csv', img_dir, aug=False)
+    if aug=="custom":
+        train_dataset = SunSpotDataset('data/train_labels.csv', img_dir, aug="custom")
+        val_dataset = SunSpotDataset('data/val_labels.csv', img_dir, aug="none")
+        test_dataset = SunSpotDataset('data/test_labels.csv', img_dir, aug="none")
+    elif aug=="pretrained":
+        train_dataset = SunSpotDataset('data/train_labels.csv', img_dir, aug="pretrained")
+        val_dataset = SunSpotDataset('data/val_labels.csv', img_dir, aug="pretrained")
+        test_dataset = SunSpotDataset('data/test_labels.csv', img_dir, aug="pretrained")
+    elif aug=="none":
+        train_dataset = SunSpotDataset('data/train_labels.csv', img_dir, aug="none")
+        val_dataset = SunSpotDataset('data/val_labels.csv', img_dir, aug="none")
+        test_dataset = SunSpotDataset('data/test_labels.csv', img_dir, aug="none")
     
     return (
         DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers),
@@ -117,7 +126,7 @@ if __name__ == "__main__":
     annotations_file = "data/img/labels.txt"
     img_dir = "data/img/"
     num_workers = 2
-    batch_size = 16
+    batch_size = 32
 
     train_loader, val_loader, test_loader = load_data(annotations_file, img_dir, num_workers, batch_size, aug="pretrained")
     print(f"Number of training batches: {len(train_loader)}")
