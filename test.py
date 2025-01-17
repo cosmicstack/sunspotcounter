@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 
-from .model import load_model, save_model
-from .data.dataLoader import load_data
+from resnet18 import load_model
+from data.dataLoader import load_data
 
 def test(seed: int = 2025):
     if torch.cuda.is_available():
@@ -19,7 +19,7 @@ def test(seed: int = 2025):
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    test_data = load_data("data/img/labels.txt", "data/img/", num_workers=2, batch_size=32)[2]
+    test_data = load_data("data/img/labels.txt", "data/img/", num_workers=2, batch_size=32, aug="pretrained")[2]
 
     loss_func = torch.nn.MSELoss()
 
