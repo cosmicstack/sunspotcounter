@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.utils.tensorboard as tb
 
-from model import load_model, save_model
+from resnet18 import load_model, save_model
 from data.dataLoader import load_data
 
 def train(
@@ -33,10 +33,10 @@ def train(
     logger = tb.SummaryWriter(log_dir)
 
     model = load_model(**kwargs)
-    logger.add_graph(model, torch.zeros(1, 1, 512, 512))
+    logger.add_graph(model, torch.zeros(1, 3, 224, 224))
     model = model.to(device)
 
-    train_data, val_data, test_data = load_data("data/img/labels.txt", "data/img/", num_workers=2, batch_size=batch_size)
+    train_data, val_data, test_data = load_data("data/img/labels.txt", "data/img/", num_workers=2, batch_size=batch_size, aug="pretrained")
 
     # log first 32 images to tensorboard
     for img, label in train_data:
@@ -46,7 +46,7 @@ def train(
 
     # Create loss function and optimizer
     loss_func = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 
     global_step = 0
 
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train the sunspot model")
     parser.add_argument("--num_epoch", type=int, default=50, help="Number of epochs")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
-    parser.add_argument("--batch_size", type=int, default=7000, help="Batch size")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     args = parser.parse_args()
 
     train(**vars(args))
