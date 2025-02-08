@@ -47,6 +47,7 @@ def train(
     # Create loss function and optimizer
     loss_func = torch.nn.MSELoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
     global_step = 0
 
@@ -71,6 +72,9 @@ def train(
             optimizer.step()
 
             global_step += 1
+        
+        # Log the learning rate
+        logger.add_scalar("train/lr", scheduler.get_last_lr()[0], epoch)
 
         # Validation
         model.eval()
@@ -85,6 +89,8 @@ def train(
         # Log metrics
         epoch_train_acc = np.mean(metrics["train_loss"])
         epoch_val_acc = np.mean(metrics["val_loss"])
+
+        scheduler.step()
 
         logger.add_scalar("train/loss", epoch_train_acc, epoch)
         logger.add_scalar("val/loss", epoch_val_acc, epoch)
